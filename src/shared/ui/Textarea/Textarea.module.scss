@@ -1,0 +1,40 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.label {
+  color: var(--muted-color);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.textarea {
+  width: 100%;
+  min-height: 112px;
+  resize: vertical;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text-color);
+  line-height: 1.45;
+  background: #ffffff;
+  outline: 0;
+}
+
+.textarea:focus {
+  border-color: var(--accent-muted-color);
+  box-shadow: 0 0 0 3px rgba(44, 123, 229, 0.12);
+}
+
+.invalid {
+  border-color: rgba(217, 45, 32, 0.58);
+}
+
+.hint {
+  color: var(--muted-color);
+  font-size: 12px;
+  line-height: 1.35;
+}

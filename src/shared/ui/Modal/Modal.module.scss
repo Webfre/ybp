@@ -1,0 +1,83 @@
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(21, 30, 46, 0.34);
+  animation: fadeIn 160ms ease;
+}
+
+.dialog {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 520px);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow-lg);
+  animation: dialogIn 160ms ease;
+}
+
+.closing {
+  animation: fadeOut 160ms ease forwards;
+}
+
+.closing .dialog {
+  animation: dialogOut 160ms ease forwards;
+}
+
+.header,
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+}
+
+.header {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.header h2 {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 20px;
+}
+
+.body {
+  padding: 18px;
+}
+
+.footer {
+  justify-content: flex-end;
+  border-top: 1px solid var(--border-color);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fadeOut {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes dialogIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes dialogOut {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}

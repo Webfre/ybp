@@ -1,0 +1,28 @@
+.emptyState {
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 28px;
+  color: var(--muted-color);
+  text-align: center;
+}
+
+.emptyState svg {
+  width: 28px;
+  height: 28px;
+  color: var(--accent-color);
+}
+
+.emptyState h3 {
+  margin: 0;
+  color: var(--text-color);
+  font-size: 18px;
+}
+
+.emptyState p {
+  max-width: 460px;
+  margin: 0;
+  line-height: 1.45;
+}

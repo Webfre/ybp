@@ -1,0 +1,31 @@
+.linkChip {
+  min-width: 0;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid rgba(44, 123, 229, 0.24);
+  border-radius: 8px;
+  padding: 7px 10px;
+  color: var(--accent-color);
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--accent-soft-color);
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    transform 120ms ease;
+}
+
+.linkChip:hover {
+  border-color: var(--accent-muted-color);
+  background: #e8f1ff;
+  transform: translateY(-1px);
+}
+
+.linkChip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

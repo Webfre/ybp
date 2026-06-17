@@ -1,0 +1,52 @@
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-color);
+}
+
+.control {
+  width: 40px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 2px;
+  background: #ffffff;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.control span {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--muted-color);
+  transition:
+    background-color 120ms ease,
+    transform 120ms ease;
+}
+
+.checked {
+  border-color: var(--accent-color);
+  background: var(--accent-color);
+}
+
+.checked span {
+  background: #ffffff;
+  transform: translateX(18px);
+}
+
+.control:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+}
