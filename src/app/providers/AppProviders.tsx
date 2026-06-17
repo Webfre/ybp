@@ -1,16 +1,22 @@
+import type { ReactNode } from "react";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { store } from "../store";
 
 type AppProvidersProps = {
-  children: React.ReactNode;
+  children: ReactNode;
 };
+
+const routerBasename =
+  import.meta.env.BASE_URL === "/"
+    ? undefined
+    : import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export function AppProviders({ children }: AppProvidersProps) {
   return (
     <Provider store={store}>
-      <BrowserRouter>
+      <BrowserRouter basename={routerBasename}>
         {children}
         <Toaster
           position="top-right"

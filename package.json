@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:pages": "tsc --noEmit && vite build --mode github-pages && node scripts/copy-spa-fallback.mjs",
+    "postbuild": "node scripts/copy-spa-fallback.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
