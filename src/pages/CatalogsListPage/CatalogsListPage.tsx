@@ -1,12 +1,21 @@
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useGetCatalogsQuery } from "../../shared/api";
-import { Badge, Button, EmptyState, Table, type TableColumn } from "../../shared/ui";
+import { Badge, EmptyState, Pagination, Table, type TableColumn } from "../../shared/ui";
 import type { Catalog } from "../../entities/catalog/model/types";
 import styles from "./CatalogsListPage.module.scss";
 
 export function CatalogsListPage() {
   const navigate = useNavigate();
   const { data: catalogs = [], isLoading } = useGetCatalogsQuery();
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  const paginatedCatalogs = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+
+    return catalogs.slice(startIndex, startIndex + pageSize);
+  }, [catalogs, page, pageSize]);
 
   const columns: Array<TableColumn<Catalog>> = [
     {
@@ -66,9 +75,6 @@ export function CatalogsListPage() {
             выбирать целевой источник допустимых значений.
           </p>
         </div>
-        <Button disabled icon="plus">
-          Создать справочник
-        </Button>
       </header>
 
       <section className={styles.surface}>
@@ -78,7 +84,20 @@ export function CatalogsListPage() {
           <Table
             columns={columns}
             getRowKey={(catalog) => catalog.id}
-            rows={catalogs}
+            rows={paginatedCatalogs}
+          />
+        )}
+        {!isLoading && catalogs.length > 0 && (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            pageSizeOptions={[5, 10, 20, 50]}
+            totalCount={catalogs.length}
+            onPageChange={setPage}
+            onPageSizeChange={(nextPageSize) => {
+              setPageSize(nextPageSize);
+              setPage(1);
+            }}
           />
         )}
       </section>

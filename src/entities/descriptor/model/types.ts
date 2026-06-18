@@ -7,7 +7,7 @@ export type DescriptorDataType =
   | "period"
   | "catalog";
 
-export type DescriptorUsage = "metric" | "dimension" | "hybrid";
+export type DescriptorUsage = "metric" | "dimension";
 
 export type FormulaArgument = {
   descriptorId: string;
@@ -21,13 +21,27 @@ export type AnalyticDimension = {
   restriction?: string;
 };
 
+export type ConditionalDimensionOperator = "==" | "!=" | "in" | "not-in";
+
+export type ConditionalDimensionEffect =
+  | "required"
+  | "optional"
+  | "excluded";
+
+export type ConditionalDimensionRule = {
+  effect: ConditionalDimensionEffect;
+  id: string;
+  sourceDimensionId: string;
+  targetDimensionIds: string[];
+  value: string;
+  operator: ConditionalDimensionOperator;
+};
+
 export type DescriptorUsagePlace = {
   entityCode: string;
   entityName: string;
   kind: "formula" | "dimension" | "catalog" | "form" | "registry";
 };
-
-export type DescriptorValidationStatus = "valid" | "warning" | "error";
 
 export type Descriptor = {
   analyticDimensions: AnalyticDimension[];
@@ -39,13 +53,13 @@ export type Descriptor = {
   historyEnabled: boolean;
   id: string;
   name: string;
-  status: DescriptorValidationStatus;
+  conditionalRules?: ConditionalDimensionRule[];
   updatedAt: string;
   usage: DescriptorUsage;
   useAllDimensionsOptional: boolean;
   usagePlaces: DescriptorUsagePlace[];
 };
 
-export type DescriptorDraft = Omit<Descriptor, "status" | "updatedAt" | "usagePlaces"> & {
+export type DescriptorDraft = Omit<Descriptor, "updatedAt" | "usagePlaces"> & {
   usagePlaces?: DescriptorUsagePlace[];
 };

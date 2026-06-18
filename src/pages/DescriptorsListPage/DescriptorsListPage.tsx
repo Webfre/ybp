@@ -9,11 +9,11 @@ import {
 import type { Descriptor } from "../../entities/descriptor/model/types";
 import { useGetDescriptorsQuery } from "../../shared/api";
 import {
-  Badge,
   Button,
   EmptyState,
   IconButton,
   Input,
+  Pagination,
   Select,
   Table,
   type TableColumn,
@@ -22,24 +22,14 @@ import styles from "./DescriptorsListPage.module.scss";
 
 const allOption = { label: "Все", value: "all" };
 
-function getStatusBadge(descriptor: Descriptor) {
-  if (descriptor.status === "error") {
-    return <Badge tone="danger">Ошибка</Badge>;
-  }
-
-  if (descriptor.status === "warning") {
-    return <Badge tone="warning">Есть замечания</Badge>;
-  }
-
-  return <Badge tone="success">Валиден</Badge>;
-}
-
 export function DescriptorsListPage() {
   const navigate = useNavigate();
   const { data: descriptors = [], isLoading } = useGetDescriptorsQuery();
   const [search, setSearch] = useState("");
   const [dataType, setDataType] = useState("all");
   const [usage, setUsage] = useState("all");
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const filteredDescriptors = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase("ru-RU");
@@ -55,6 +45,16 @@ export function DescriptorsListPage() {
       return matchesSearch && matchesDataType && matchesUsage;
     });
   }, [dataType, descriptors, search, usage]);
+
+  const paginatedDescriptors = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+
+    return filteredDescriptors.slice(startIndex, startIndex + pageSize);
+  }, [filteredDescriptors, page, pageSize]);
+
+  function resetPage() {
+    setPage(1);
+  }
 
   const columns: Array<TableColumn<Descriptor>> = [
     {
@@ -97,15 +97,9 @@ export function DescriptorsListPage() {
     {
       key: "formula",
       render: (descriptor) =>
-        descriptor.formula ? <Badge tone="accent">Есть формула</Badge> : "—",
+        descriptor.formula ? "Есть формула" : "—",
       title: "Формула",
       width: "140px",
-    },
-    {
-      key: "status",
-      render: getStatusBadge,
-      title: "Статус",
-      width: "150px",
     },
     {
       align: "right",
@@ -133,7 +127,7 @@ export function DescriptorsListPage() {
           <h1>Управление дескрипторами</h1>
           <p>
             Мок-экран покрывает список, поиск, фильтры, создание, редактирование
-            и демонстрационные статусы валидации.
+            и основные сценарии работы с дескрипторами.
           </p>
         </div>
         <Button icon="plus" onClick={() => navigate("/descriptors/new")}>
@@ -146,19 +140,28 @@ export function DescriptorsListPage() {
           label="Поиск"
           placeholder="Код или наименование"
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => {
+            setSearch(event.target.value);
+            resetPage();
+          }}
         />
         <Select
           label="Тип данных"
           options={[allOption, ...descriptorDataTypeOptions]}
           value={dataType}
-          onChange={setDataType}
+          onChange={(nextDataType) => {
+            setDataType(nextDataType);
+            resetPage();
+          }}
         />
         <Select
           label="Способ использования"
           options={[allOption, ...descriptorUsageOptions]}
           value={usage}
-          onChange={setUsage}
+          onChange={(nextUsage) => {
+            setUsage(nextUsage);
+            resetPage();
+          }}
         />
         <Button
           icon="refresh"
@@ -167,6 +170,7 @@ export function DescriptorsListPage() {
             setSearch("");
             setDataType("all");
             setUsage("all");
+            resetPage();
           }}
         >
           Сбросить
@@ -181,7 +185,20 @@ export function DescriptorsListPage() {
             columns={columns}
             emptyText="Дескрипторы не найдены"
             getRowKey={(descriptor) => descriptor.id}
-            rows={filteredDescriptors}
+            rows={paginatedDescriptors}
+          />
+        )}
+        {!isLoading && filteredDescriptors.length > 0 && (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            pageSizeOptions={[5, 10, 20, 50]}
+            totalCount={filteredDescriptors.length}
+            onPageChange={setPage}
+            onPageSizeChange={(nextPageSize) => {
+              setPageSize(nextPageSize);
+              setPage(1);
+            }}
           />
         )}
       </section>

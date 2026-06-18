@@ -8,13 +8,18 @@ import {
   descriptorUsageOptions,
   getDefaultUsageByDataType,
 } from "../../entities/descriptor/model/dictionaries";
+import type { Catalog } from "../../entities/catalog/model/types";
 import type {
   AnalyticDimension,
+  ConditionalDimensionEffect,
+  ConditionalDimensionOperator,
+  ConditionalDimensionRule,
+  Descriptor,
   DescriptorDraft,
   DescriptorUsagePlace,
 } from "../../entities/descriptor/model/types";
 import { useGetCatalogsQuery, useGetDescriptorQuery, useGetDescriptorsQuery } from "../../shared/api";
-import { validateDescriptorDraft, validateFormula, type ValidationIssue } from "../../shared/lib/validation";
+import { validateDescriptorDraft, type ValidationIssue } from "../../shared/lib/validation";
 import {
   Badge,
   Button,
@@ -24,14 +29,13 @@ import {
   Icon,
   IconButton,
   Input,
-  LinkChip,
   Select,
   Table,
   Tabs,
-  Textarea,
   Toggle,
   type TableColumn,
 } from "../../shared/ui";
+import { FormulaEditor } from "./FormulaEditor/FormulaEditor";
 import styles from "./DescriptorPage.module.scss";
 
 type DescriptorTab = "general" | "formula" | "dimensions" | "key" | "usage";
@@ -44,7 +48,18 @@ const tabItems = [
   { label: "Использование", value: "usage" },
 ] satisfies Array<{ label: string; value: DescriptorTab }>;
 
-const operators = ["+", "-", "*", "/", "(", ")", "="];
+const conditionalOperatorOptions = [
+  { label: "равно", value: "==" },
+  { label: "не равно", value: "!=" },
+  { label: "в списке", value: "in" },
+  { label: "не в списке", value: "not-in" },
+] satisfies Array<{ label: string; value: ConditionalDimensionOperator }>;
+
+const conditionalEffectOptions = [
+  { label: "сделать обязательным", value: "required" },
+  { label: "сделать необязательным", value: "optional" },
+  { label: "не является разрезом", value: "excluded" },
+] satisfies Array<{ label: string; value: ConditionalDimensionEffect }>;
 
 function createNewDescriptorDraft(): DescriptorDraft {
   return {
@@ -56,6 +71,7 @@ function createNewDescriptorDraft(): DescriptorDraft {
     historyEnabled: false,
     id: "new",
     name: "",
+    conditionalRules: [],
     usage: "metric",
     useAllDimensionsOptional: false,
     usagePlaces: [],
@@ -76,6 +92,427 @@ function getUsagePlaceLabel(place: DescriptorUsagePlace) {
   };
 
   return labels[place.kind];
+}
+
+function parseRestrictionValues(restriction?: string) {
+  return (restriction ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+function stringifyRestrictionValues(values: string[]) {
+  return values.join(", ");
+}
+
+function getCatalogElementLabel(catalog: Catalog, elementIdOrLabel: string) {
+  const element =
+    catalog.elements.find((item) => item.id === elementIdOrLabel) ??
+    catalog.elements.find((item) =>
+      Object.values(item.values).some(
+        (value) => String(value).toLocaleLowerCase("ru-RU") ===
+          elementIdOrLabel.toLocaleLowerCase("ru-RU"),
+      ),
+    );
+
+  if (!element) {
+    return elementIdOrLabel;
+  }
+
+  return catalog.displayTemplate.replace(/\{([A-Z0-9_]+)\}/g, (_, key) =>
+    String(element.values[key] ?? ""),
+  );
+}
+
+function isCatalogElementSelected(
+  catalog: Catalog,
+  elementId: string,
+  selectedValues: string[],
+) {
+  const element = catalog.elements.find((item) => item.id === elementId);
+
+  if (!element) {
+    return false;
+  }
+
+  return selectedValues.some((selectedValue) => {
+    const normalizedSelectedValue = selectedValue.toLocaleLowerCase("ru-RU");
+
+    return (
+      selectedValue === element.id ||
+      Object.values(element.values).some(
+        (value) =>
+          String(value).toLocaleLowerCase("ru-RU") === normalizedSelectedValue,
+      )
+    );
+  });
+}
+
+function validateRestrictionInput(
+  value: string,
+  dimensionDescriptor: Descriptor,
+) {
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) {
+    return "Введите значение";
+  }
+
+  if (dimensionDescriptor.dataType === "number" && Number.isNaN(Number(trimmedValue))) {
+    return "Для числового разреза нужно ввести число";
+  }
+
+  if (
+    dimensionDescriptor.dataType === "boolean" &&
+    !["true", "false", "да", "нет", "1", "0"].includes(
+      trimmedValue.toLocaleLowerCase("ru-RU"),
+    )
+  ) {
+    return "Для логического разреза используйте true/false, да/нет или 1/0";
+  }
+
+  if (
+    ["datetime", "period"].includes(dimensionDescriptor.dataType) &&
+    Number.isNaN(Date.parse(trimmedValue))
+  ) {
+    return "Для даты или периода используйте формат YYYY-MM-DD";
+  }
+
+  return undefined;
+}
+
+type RestrictionEditorProps = {
+  catalogs: Catalog[];
+  dimension: AnalyticDimension;
+  dimensionDescriptor?: Descriptor;
+  onChange: (patch: Partial<AnalyticDimension>) => void;
+};
+
+function RestrictionEditor({
+  catalogs,
+  dimension,
+  dimensionDescriptor,
+  onChange,
+}: RestrictionEditorProps) {
+  const [inputValue, setInputValue] = useState("");
+  const [inputError, setInputError] = useState<string | undefined>();
+  const values = parseRestrictionValues(dimension.restriction);
+  const targetCatalog = dimensionDescriptor?.catalogId
+    ? catalogs.find((catalog) => catalog.id === dimensionDescriptor.catalogId)
+    : undefined;
+
+  function updateValues(nextValues: string[]) {
+    onChange({
+      restriction: nextValues.length
+        ? stringifyRestrictionValues(nextValues)
+        : undefined,
+    });
+  }
+
+  function addValue(nextValue: string) {
+    if (!dimensionDescriptor) {
+      return;
+    }
+
+    const trimmedValue = nextValue.trim();
+    const nextError = validateRestrictionInput(trimmedValue, dimensionDescriptor);
+
+    if (nextError) {
+      setInputError(nextError);
+      return;
+    }
+
+    if (values.includes(trimmedValue)) {
+      setInputError("Такое значение уже добавлено");
+      return;
+    }
+
+    updateValues([...values, trimmedValue]);
+    setInputValue("");
+    setInputError(undefined);
+  }
+
+  function removeValue(valueToRemove: string) {
+    updateValues(values.filter((value) => value !== valueToRemove));
+  }
+
+  if (!dimensionDescriptor) {
+    return <span>—</span>;
+  }
+
+  const hint =
+    dimensionDescriptor.dataType === "catalog"
+      ? "Выберите элементы целевого справочника"
+      : dimensionDescriptor.dataType === "number"
+        ? "Добавляйте числа по одному"
+        : dimensionDescriptor.dataType === "period" ||
+            dimensionDescriptor.dataType === "datetime"
+          ? "Формат периода или даты: YYYY-MM-DD"
+          : "Добавляйте значения по одному";
+
+  return (
+    <div className={styles.restrictionEditor}>
+      {values.length > 0 ? (
+        <div className={styles.restrictionChips}>
+          {values.map((value) => (
+            <span className={styles.restrictionChip} key={value}>
+              {targetCatalog ? getCatalogElementLabel(targetCatalog, value) : value}
+              <button
+                aria-label={`Удалить допустимое значение ${value}`}
+                type="button"
+                onClick={() => removeValue(value)}
+              >
+                <Icon name="remove" />
+              </button>
+            </span>
+          ))}
+        </div>
+      ) : (
+        <span className={styles.restrictionEmpty}>Все значения разрешены</span>
+      )}
+
+      {dimensionDescriptor.dataType === "catalog" && targetCatalog ? (
+        <div className={styles.restrictionCatalogPicker}>
+          <span>{hint}</span>
+          <div className={styles.restrictionCatalogOptions}>
+            {targetCatalog.elements
+              .filter(
+                (element) =>
+                  !isCatalogElementSelected(targetCatalog, element.id, values),
+              )
+              .map((element) => (
+                <button
+                  key={element.id}
+                  type="button"
+                  onClick={() => addValue(element.id)}
+                >
+                  {getCatalogElementLabel(targetCatalog, element.id)}
+                </button>
+              ))}
+            {targetCatalog.elements.every((element) =>
+              isCatalogElementSelected(targetCatalog, element.id, values),
+            ) && <span className={styles.restrictionEmpty}>Все элементы уже добавлены</span>}
+          </div>
+        </div>
+      ) : (
+        <div className={styles.restrictionInputRow}>
+          <Input
+            error={inputError}
+            hint={hint}
+            placeholder="Введите значение"
+            value={inputValue}
+            onChange={(event) => {
+              setInputValue(event.target.value);
+              setInputError(undefined);
+            }}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                addValue(inputValue);
+              }
+            }}
+          />
+          <Button
+            icon="plus"
+            variant="secondary"
+            onClick={() => addValue(inputValue)}
+          >
+            Добавить
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type ConditionalRulesEditorProps = {
+  dimensions: AnalyticDimension[];
+  descriptors: Descriptor[];
+  rules: ConditionalDimensionRule[];
+  onAdd: () => void;
+  onRemove: (ruleId: string) => void;
+  onUpdate: (
+    ruleId: string,
+    patch: Partial<ConditionalDimensionRule>,
+  ) => void;
+};
+
+function getDimensionLabel(
+  descriptorId: string,
+  descriptors: Descriptor[],
+) {
+  const descriptor = descriptors.find((item) => item.id === descriptorId);
+
+  return descriptor ? `${descriptor.code} / ${descriptor.name}` : "Неизвестный разрез";
+}
+
+function getRulePreview(
+  rule: ConditionalDimensionRule,
+  descriptors: Descriptor[],
+) {
+  const operatorLabel =
+    conditionalOperatorOptions.find((item) => item.value === rule.operator)
+      ?.label ?? rule.operator;
+  const effectLabel =
+    conditionalEffectOptions.find((item) => item.value === rule.effect)?.label ??
+    rule.effect;
+  const sourceLabel = getDimensionLabel(rule.sourceDimensionId, descriptors);
+  const targetLabels = rule.targetDimensionIds
+    .map((descriptorId) => getDimensionLabel(descriptorId, descriptors))
+    .join(", ");
+
+  return `Если ${sourceLabel} ${operatorLabel} ${rule.value || "..."} -> ${effectLabel}: ${
+    targetLabels || "разрез не выбран"
+  }`;
+}
+
+function ConditionalRulesEditor({
+  dimensions,
+  descriptors,
+  rules,
+  onAdd,
+  onRemove,
+  onUpdate,
+}: ConditionalRulesEditorProps) {
+  const dimensionOptions = dimensions.map((dimension) => ({
+    label: getDimensionLabel(dimension.descriptorId, descriptors),
+    value: dimension.descriptorId,
+  }));
+
+  function toggleTarget(
+    rule: ConditionalDimensionRule,
+    descriptorId: string,
+    checked: boolean,
+  ) {
+    const nextTargetIds = checked
+      ? [...rule.targetDimensionIds, descriptorId]
+      : rule.targetDimensionIds.filter((item) => item !== descriptorId);
+
+    onUpdate(rule.id, { targetDimensionIds: nextTargetIds });
+  }
+
+  return (
+    <section className={styles.conditionalRules}>
+      <div className={styles.conditionalHeader}>
+        <div>
+          <div className={styles.sectionTitleRow}>
+            <h2>Условные правила обязательности</h2>
+            <Badge tone="warning">Черновик</Badge>
+          </div>
+          <p>
+            Макет ПроУБП.FR-001.010: если значение одного разреза подходит под условие,
+            другие разрезы можно сделать обязательными, необязательными или исключить.
+          </p>
+        </div>
+        <Button
+          disabled={dimensions.length < 2}
+          icon="plus"
+          variant="secondary"
+          onClick={onAdd}
+        >
+          Добавить правило
+        </Button>
+      </div>
+
+      {dimensions.length < 2 && (
+        <EmptyState
+          description="Для условного правила нужно минимум два аналитических разреза: один в условии и один как результат."
+          title="Недостаточно разрезов"
+        />
+      )}
+
+      {dimensions.length >= 2 && rules.length === 0 && (
+        <EmptyState
+          description="Добавьте правило вида: если [разрез] [оператор] [значение], то [режим] для выбранных разрезов."
+          title="Условные правила пока не заданы"
+        />
+      )}
+
+      {rules.length > 0 && (
+        <div className={styles.conditionalList}>
+          {rules.map((rule, index) => (
+            <article className={styles.conditionalCard} key={rule.id}>
+              <div className={styles.conditionalCardHeader}>
+                <div>
+                  <strong>Правило {index + 1}</strong>
+                  <span>{getRulePreview(rule, descriptors)}</span>
+                </div>
+                <IconButton
+                  ariaLabel="Удалить условное правило"
+                  icon="trash"
+                  tone="danger"
+                  onClick={() => onRemove(rule.id)}
+                />
+              </div>
+
+              <div className={styles.conditionalGrid}>
+                <Select
+                  label="Если разрез"
+                  options={dimensionOptions}
+                  value={rule.sourceDimensionId}
+                  onChange={(sourceDimensionId) =>
+                    onUpdate(rule.id, { sourceDimensionId })
+                  }
+                />
+                <Select
+                  label="Оператор"
+                  options={conditionalOperatorOptions}
+                  value={rule.operator}
+                  onChange={(operator) => onUpdate(rule.id, { operator })}
+                />
+                <Input
+                  hint={
+                    rule.operator === "in" || rule.operator === "not-in"
+                      ? "Несколько значений через запятую"
+                      : "Одно значение для сравнения"
+                  }
+                  label="Значение"
+                  placeholder="Например: org-1 или Москва"
+                  value={rule.value}
+                  onChange={(event) =>
+                    onUpdate(rule.id, { value: event.target.value })
+                  }
+                />
+                <Select
+                  label="То"
+                  options={conditionalEffectOptions}
+                  value={rule.effect}
+                  onChange={(effect) => onUpdate(rule.id, { effect })}
+                />
+              </div>
+
+              <div className={styles.conditionalTargets}>
+                <span>Применить к разрезам</span>
+                <div>
+                  {dimensions.map((dimension) => (
+                    <Checkbox
+                      checked={rule.targetDimensionIds.includes(
+                        dimension.descriptorId,
+                      )}
+                      disabled={dimension.descriptorId === rule.sourceDimensionId}
+                      key={dimension.descriptorId}
+                      label={getDimensionLabel(dimension.descriptorId, descriptors)}
+                      onChange={(checked) =>
+                        toggleTarget(rule, dimension.descriptorId, checked)
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+
+      <div className={styles.conditionalNote}>
+        <Badge tone="neutral">MVP</Badge>
+        <span>
+          Сейчас это визуальный конструктор и мок-валидация. Реальное применение
+          правил при вводе значений нужно будет привязать к DSL/API после согласования.
+        </span>
+      </div>
+    </section>
+  );
 }
 
 export function DescriptorPage() {
@@ -111,14 +548,14 @@ export function DescriptorPage() {
   const actualDraft = draft ?? initialDraft;
 
   const validationIssues = useMemo(
-    () => (actualDraft ? validateDescriptorDraft(actualDraft, descriptors) : []),
-    [actualDraft, descriptors],
+    () =>
+      actualDraft ? validateDescriptorDraft(actualDraft, descriptors, catalogs) : [],
+    [actualDraft, catalogs, descriptors],
   );
 
   const dimensionDescriptors = descriptors.filter(
-    (item) => item.usage === "dimension" || item.usage === "hybrid",
+    (item) => item.usage === "dimension",
   );
-  const metricDescriptors = descriptors.filter((item) => item.usage === "metric");
   const catalogOptions = catalogs.map((catalog) => ({
     label: `${catalog.code} / ${catalog.name}`,
     value: catalog.id,
@@ -133,6 +570,10 @@ export function DescriptorPage() {
   }
 
   const currentDraft: DescriptorDraft = actualDraft;
+  const isUsageChangeLocked =
+    currentDraft.usage === "metric" &&
+    !isNew &&
+    (currentDraft.usagePlaces?.length ?? 0) > 0;
 
   function updateDraft(patch: Partial<DescriptorDraft>) {
     setDraft((currentDraft) => {
@@ -150,8 +591,13 @@ export function DescriptorPage() {
     updateDraft({
       catalogId: nextDataType === "catalog" ? currentDraft.catalogId : undefined,
       dataType: nextDataType,
-      usage: defaultUsage,
+      usage: isUsageChangeLocked ? currentDraft.usage : defaultUsage,
     });
+
+    if (isUsageChangeLocked) {
+      toast("Способ использования не изменен: показатель уже используется");
+      return;
+    }
 
     toast(`Способ использования установлен: ${descriptorUsageLabels[defaultUsage]}`);
   }
@@ -220,6 +666,75 @@ export function DescriptorPage() {
       analyticDimensions: currentDraft.analyticDimensions.filter(
         (dimension) => dimension.descriptorId !== descriptorIdToRemove,
       ),
+      conditionalRules: (currentDraft.conditionalRules ?? [])
+        .map((rule) => ({
+          ...rule,
+          targetDimensionIds: rule.targetDimensionIds.filter(
+            (descriptorId) => descriptorId !== descriptorIdToRemove,
+          ),
+        }))
+        .filter(
+          (rule) =>
+            rule.sourceDimensionId !== descriptorIdToRemove &&
+            rule.targetDimensionIds.length > 0,
+        ),
+    });
+  }
+
+  function addConditionalRule() {
+    const [sourceDimension, targetDimension] = currentDraft.analyticDimensions;
+
+    if (!sourceDimension || !targetDimension) {
+      toast.error("Для условного правила нужно минимум два разреза");
+      return;
+    }
+
+    updateDraft({
+      conditionalRules: [
+        ...(currentDraft.conditionalRules ?? []),
+        {
+          effect: "required",
+          id: `rule-${Date.now()}`,
+          operator: "==",
+          sourceDimensionId: sourceDimension.descriptorId,
+          targetDimensionIds: [targetDimension.descriptorId],
+          value: "",
+        },
+      ],
+    });
+  }
+
+  function updateConditionalRule(
+    ruleId: string,
+    patch: Partial<ConditionalDimensionRule>,
+  ) {
+    updateDraft({
+      conditionalRules: (currentDraft.conditionalRules ?? []).map((rule) => {
+        if (rule.id !== ruleId) {
+          return rule;
+        }
+
+        const nextRule = { ...rule, ...patch };
+
+        if (
+          patch.sourceDimensionId &&
+          nextRule.targetDimensionIds.includes(patch.sourceDimensionId)
+        ) {
+          nextRule.targetDimensionIds = nextRule.targetDimensionIds.filter(
+            (descriptorId) => descriptorId !== patch.sourceDimensionId,
+          );
+        }
+
+        return nextRule;
+      }),
+    });
+  }
+
+  function removeConditionalRule(ruleId: string) {
+    updateDraft({
+      conditionalRules: (currentDraft.conditionalRules ?? []).filter(
+        (rule) => rule.id !== ruleId,
+      ),
     });
   }
 
@@ -276,8 +791,22 @@ export function DescriptorPage() {
     },
     {
       key: "restriction",
-      render: (dimension) => dimension.restriction || "—",
+      render: (dimension) => {
+        const dimensionDescriptor = descriptors.find(
+          (item) => item.id === dimension.descriptorId,
+        );
+
+        return (
+          <RestrictionEditor
+            catalogs={catalogs}
+            dimension={dimension}
+            dimensionDescriptor={dimensionDescriptor}
+            onChange={(patch) => updateDimension(dimension.descriptorId, patch)}
+          />
+        );
+      },
       title: "Допустимые значения",
+      width: "420px",
     },
     {
       align: "right",
@@ -363,6 +892,12 @@ export function DescriptorPage() {
                   />
                 )}
                 <Select
+                  disabled={isUsageChangeLocked}
+                  hint={
+                    isUsageChangeLocked
+                      ? "Нельзя сменить способ использования показателя, который уже используется."
+                      : undefined
+                  }
                   label="Способ использования"
                   options={descriptorUsageOptions}
                   value={actualDraft.usage}
@@ -374,92 +909,20 @@ export function DescriptorPage() {
 
           {activeTab === "formula" && (
             <div className={styles.section}>
-              <div className={styles.formulaLayout}>
-                <aside className={styles.argumentPanel}>
-                  <h2>Аргументы</h2>
-                  {actualDraft.formulaArguments.map((argument) => {
-                    const argumentDescriptor =
-                      argument.descriptorId === actualDraft.id
-                        ? actualDraft
-                        : descriptors.find((item) => item.id === argument.descriptorId);
-
-                    return (
-                      <LinkChip
-                        icon="link"
-                        key={argument.letter}
-                        name={`${argument.letter} - ${argumentDescriptor?.name ?? "Не выбран"}`}
-                      />
-                    );
-                  })}
-                  {metricDescriptors
-                    .filter(
-                      (item) =>
-                        item.id !== actualDraft.id &&
-                        !actualDraft.formulaArguments.some(
-                          (argument) => argument.descriptorId === item.id,
-                        ),
-                    )
-                    .slice(0, 3)
-                    .map((item, index) => (
-                      <button
-                        className={styles.argumentButton}
-                        key={item.id}
-                        type="button"
-                        onClick={() =>
-                          updateDraft({
-                            formulaArguments: [
-                              ...actualDraft.formulaArguments,
-                              { descriptorId: item.id, letter: String.fromCharCode(66 + index) },
-                            ],
-                          })
-                        }
-                      >
-                        Добавить {item.name}
-                      </button>
-                    ))}
-                </aside>
-
-                <div className={styles.formulaEditor}>
-                  <div className={styles.operatorBar}>
-                    {operators.map((operator) => (
-                      <button
-                        key={operator}
-                        type="button"
-                        onClick={() =>
-                          updateDraft({ formula: `${actualDraft.formula}${operator}` })
-                        }
-                      >
-                        {operator}
-                      </button>
-                    ))}
-                  </div>
-                  <Textarea
-                    error={formulaIssues[0]?.message}
-                    label="Формула вычисляемого показателя"
-                    placeholder="A = B - C"
-                    value={actualDraft.formula}
-                    onChange={(event) => updateDraft({ formula: event.target.value })}
-                  />
-                  <div className={styles.formulaActions}>
-                    <Button
-                      icon="check"
-                      variant="secondary"
-                      onClick={() => {
-                        const nextIssues = validateFormula(actualDraft.formula);
-                        setFormulaIssues(nextIssues);
-                        if (nextIssues.length) {
-                          toast.error("Формула содержит ошибки");
-                          return;
-                        }
-                        toast.success("Формула прошла мок-проверку");
-                      }}
-                    >
-                      Проверить
-                    </Button>
-                    <span>Поддерживаются операторы +, -, *, /, скобки и комментарии #.</span>
-                  </div>
-                </div>
-              </div>
+              {actualDraft.usage === "metric" ? (
+                <FormulaEditor
+                  currentDescriptor={actualDraft}
+                  descriptors={descriptors}
+                  issues={formulaIssues}
+                  onFormulaIssuesChange={setFormulaIssues}
+                  onUpdate={updateDraft}
+                />
+              ) : (
+                <EmptyState
+                  description="Этот дескриптор используется как разрез данных. Формулы настраиваются только для показателей, которые нужно вычислять из других показателей."
+                  title="Формула доступна только для показателя"
+                />
+              )}
             </div>
           )}
 
@@ -493,6 +956,14 @@ export function DescriptorPage() {
                   onChange={(checked) => updateDraft({ useAllDimensionsOptional: checked })}
                 />
               </div>
+              <ConditionalRulesEditor
+                descriptors={descriptors}
+                dimensions={actualDraft.analyticDimensions}
+                rules={actualDraft.conditionalRules ?? []}
+                onAdd={addConditionalRule}
+                onRemove={removeConditionalRule}
+                onUpdate={updateConditionalRule}
+              />
             </div>
           )}
 

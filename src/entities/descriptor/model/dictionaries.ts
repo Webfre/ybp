@@ -12,7 +12,6 @@ export const descriptorDataTypeLabels: Record<DescriptorDataType, string> = {
 
 export const descriptorUsageLabels: Record<DescriptorUsage, string> = {
   dimension: "Разрез данных",
-  hybrid: "Гибрид",
   metric: "Показатель",
 };
 

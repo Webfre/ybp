@@ -1,4 +1,6 @@
 .pagination {
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: minmax(112px, 1fr) auto minmax(220px, 1fr);
   align-items: center;

@@ -18,8 +18,7 @@
 
 .header p,
 .sectionText,
-.sectionHeader p,
-.formulaActions span {
+.sectionHeader p {
   margin: 0;
   color: var(--muted-color);
   line-height: 1.45;
@@ -48,7 +47,16 @@
   gap: 18px;
 }
 
-.editor,
+.editor {
+  position: relative;
+  z-index: 2;
+  overflow: visible;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow-sm);
+}
+
 .summary {
   overflow: hidden;
   border: 1px solid var(--border-color);
@@ -63,8 +71,7 @@
 
 .section h2,
 .summary h2,
-.summary h3,
-.argumentPanel h2 {
+.summary h3 {
   margin: 0 0 12px;
   color: var(--text-color);
   font-size: 18px;
@@ -81,58 +88,8 @@
 }
 
 .inlineAction {
-  align-self: end;
-}
-
-.formulaLayout {
-  display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
-  gap: 16px;
-}
-
-.argumentPanel {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 12px;
-  background: var(--soft-color);
-}
-
-.argumentButton,
-.operatorBar button {
-  min-height: 34px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 0 10px;
-  color: var(--text-color);
-  background: #ffffff;
-  cursor: pointer;
-}
-
-.formulaEditor {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.operatorBar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.operatorBar button {
-  min-width: 38px;
-  font-weight: 800;
-}
-
-.formulaActions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  align-self: start;
+  padding-top: 22px;
 }
 
 .sectionHeader {
@@ -156,9 +113,215 @@
   font-size: 12px;
 }
 
+.restrictionEditor {
+  min-width: 280px;
+  display: grid;
+  gap: 8px;
+}
+
+.restrictionChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.restrictionChip {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  gap: 6px;
+  border: 1px solid var(--accent-muted-color);
+  border-radius: 999px;
+  padding: 4px 7px 4px 10px;
+  color: var(--accent-color);
+  font-size: 12px;
+  font-weight: 750;
+  background: var(--accent-soft-color);
+}
+
+.restrictionChip button {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  color: var(--muted-color);
+  background: transparent;
+  cursor: pointer;
+}
+
+.restrictionChip button:hover {
+  color: var(--danger-color);
+  background: #ffffff;
+}
+
+.restrictionEmpty {
+  color: var(--muted-color);
+  font-size: 13px;
+}
+
+.restrictionInputRow {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) auto;
+  gap: 8px;
+  align-items: start;
+}
+
+.restrictionCatalogPicker {
+  display: grid;
+  gap: 6px;
+}
+
+.restrictionCatalogPicker > span {
+  color: var(--muted-color);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.restrictionCatalogOptions {
+  max-height: 124px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-color: #b9c4d4 transparent;
+  scrollbar-width: thin;
+}
+
+.restrictionCatalogOptions::-webkit-scrollbar {
+  width: 6px;
+}
+
+.restrictionCatalogOptions::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #b9c4d4;
+}
+
+.restrictionCatalogOptions button {
+  min-height: 30px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0 9px;
+  color: var(--text-color);
+  font-size: 12px;
+  font-weight: 700;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.restrictionCatalogOptions button:hover {
+  color: var(--accent-color);
+  border-color: var(--accent-muted-color);
+  background: var(--accent-soft-color);
+}
+
 .toggleRow,
 .keyList {
   margin-top: 16px;
+}
+
+.conditionalRules {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--soft-color);
+}
+
+.conditionalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.sectionTitleRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.sectionTitleRow h2 {
+  margin: 0;
+}
+
+.conditionalHeader p {
+  margin: 0;
+  color: var(--muted-color);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.conditionalList {
+  display: grid;
+  gap: 10px;
+}
+
+.conditionalCard {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.conditionalCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.conditionalCardHeader strong,
+.conditionalCardHeader span {
+  display: block;
+}
+
+.conditionalCardHeader span {
+  margin-top: 4px;
+  color: var(--muted-color);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.conditionalGrid {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(140px, 0.7fr) minmax(180px, 1fr) minmax(180px, 1fr);
+  gap: 10px;
+}
+
+.conditionalTargets {
+  display: grid;
+  gap: 8px;
+}
+
+.conditionalTargets > span {
+  color: var(--muted-color);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.conditionalTargets > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+.conditionalNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: var(--muted-color);
+  font-size: 12px;
+  line-height: 1.4;
 }
 
 .keyList,
@@ -183,6 +346,7 @@
 .summary {
   position: sticky;
   top: 82px;
+  z-index: 1;
   align-self: start;
   padding: 18px;
 }
@@ -217,8 +381,7 @@
 }
 
 @media (max-width: 1120px) {
-  .contentGrid,
-  .formulaLayout {
+  .contentGrid {
     grid-template-columns: 1fr;
   }
 
@@ -238,7 +401,8 @@
   }
 
   .header,
-  .headerActions {
+  .headerActions,
+  .conditionalHeader {
     flex-direction: column;
   }
 
@@ -246,7 +410,16 @@
     grid-template-columns: 1fr;
   }
 
+  .conditionalGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .restrictionInputRow {
+    grid-template-columns: 1fr;
+  }
+
   .inlineAction {
     align-self: stretch;
+    padding-top: 0;
   }
 }

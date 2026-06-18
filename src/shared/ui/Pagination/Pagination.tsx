@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "../Button/Button";
-import { FilterSelect } from "../FilterSelect/FilterSelect";
+import { Select } from "../Select/Select";
 import styles from "./Pagination.module.scss";
 
 type ScrollOnChange = "none" | "top" | "bottom";
@@ -51,7 +51,7 @@ export function Pagination({
 
   const pageSizeSelectOptions = pageSizeOptions.map((option) => ({
     label: String(option),
-    value: option,
+    value: String(option),
   }));
 
   function getScrollTarget() {
@@ -154,13 +154,14 @@ export function Pagination({
 
   return (
     <div className={styles.pagination}>
-      <FilterSelect
+      <Select
         className={styles.pageSizeSelect}
         disabled={isInteractionDisabled}
         label="На странице"
         options={pageSizeSelectOptions}
-        value={safePageSize}
-        onChange={handlePageSizeChange}
+        placementStrategy="bottom"
+        value={String(safePageSize)}
+        onChange={(nextPageSize) => handlePageSizeChange(Number(nextPageSize))}
       />
 
       <span className={styles.summary}>{summary}</span>

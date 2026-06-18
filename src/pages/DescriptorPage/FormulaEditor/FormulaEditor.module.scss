@@ -1,0 +1,285 @@
+.formulaWorkspace {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 16px;
+}
+
+.argumentPanel,
+.editorPanel,
+.helpPanel,
+.issuePanel,
+.examples,
+.contextNote {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.argumentPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  background: var(--soft-color);
+}
+
+.argumentPanel h2,
+.editorPanel h2,
+.helpPanel h3,
+.issuePanel h3,
+.examples h3 {
+  margin: 0;
+  color: var(--text-color);
+}
+
+.argumentPanel p,
+.editorPanel p,
+.issuePanel p,
+.contextNote span {
+  margin: 6px 0 0;
+  color: var(--muted-color);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.argumentList {
+  display: grid;
+  gap: 10px;
+}
+
+.argumentCard {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px;
+  background: #ffffff;
+}
+
+.argumentHeader {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.argumentHeader strong,
+.argumentHeader span {
+  display: block;
+}
+
+.argumentHeader strong {
+  overflow: hidden;
+  color: var(--text-color);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.argumentHeader span:not(.letter) {
+  margin-top: 2px;
+  color: var(--muted-color);
+  font-size: 12px;
+}
+
+.letter {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #ffffff;
+  font-weight: 850;
+  background: var(--accent-color);
+}
+
+.argumentMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--muted-color);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.lockedHint {
+  color: var(--muted-color);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.editorPanel {
+  display: grid;
+  gap: 16px;
+  padding: 16px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.quickInsert {
+  display: grid;
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.groupLabel {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted-color);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.buttonGroup button {
+  min-height: 34px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0 10px;
+  color: var(--text-color);
+  font-weight: 750;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.buttonGroup button:hover {
+  color: var(--accent-color);
+  border-color: var(--accent-muted-color);
+  background: var(--accent-soft-color);
+}
+
+.feedbackGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.helpPanel,
+.issuePanel,
+.examples {
+  padding: 14px;
+}
+
+.helpPanel ul {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--muted-color);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.issueList {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.issue {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 13px;
+}
+
+.exampleList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.exampleList button {
+  min-width: 0;
+  display: grid;
+  gap: 7px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--text-color);
+  text-align: left;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.exampleList button:hover {
+  border-color: var(--accent-muted-color);
+  background: var(--accent-soft-color);
+}
+
+.exampleList code {
+  overflow: hidden;
+  border-radius: 6px;
+  padding: 5px 7px;
+  color: var(--accent-color);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--soft-color);
+}
+
+.exampleList span {
+  color: var(--muted-color);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.contextNote {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  background: var(--soft-color);
+}
+
+.contextNote span {
+  margin: 0;
+}
+
+@media (max-width: 1120px) {
+  .formulaWorkspace,
+  .feedbackGrid,
+  .quickInsert {
+    grid-template-columns: 1fr;
+  }
+
+  .exampleList {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1360px) {
+  .formulaWorkspace {
+    grid-template-columns: 1fr;
+  }
+
+  .argumentList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .argumentList,
+  .feedbackGrid,
+  .quickInsert,
+  .exampleList {
+    grid-template-columns: 1fr;
+  }
+
+  .panelHeader {
+    flex-direction: column;
+  }
+}

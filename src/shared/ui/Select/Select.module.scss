@@ -1,4 +1,5 @@
 .field {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -11,30 +12,127 @@
   font-weight: 700;
 }
 
-.select {
+.selectButton {
   width: 100%;
   min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   border: 1px solid var(--border-color);
   border-radius: 8px;
   padding: 0 10px;
   color: var(--text-color);
   background: #ffffff;
   outline: 0;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background-color 120ms ease;
 }
 
-.select:focus {
+.selectButton:hover {
+  border-color: var(--accent-muted-color);
+  background: var(--soft-color);
+}
+
+.selectButton:focus-visible,
+.selectButton[aria-expanded="true"] {
   border-color: var(--accent-muted-color);
   box-shadow: 0 0 0 3px rgba(44, 123, 229, 0.12);
 }
 
-.select:disabled {
+.selectButton:disabled {
   color: var(--muted-color);
   background: var(--soft-color);
   cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.selectButton span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.value {
+  color: var(--text-color);
+}
+
+.placeholder {
+  color: var(--muted-color);
 }
 
 .invalid {
   border-color: rgba(217, 45, 32, 0.58);
+}
+
+.popover {
+  position: absolute;
+  z-index: 40;
+  left: 0;
+  width: 100%;
+  min-width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px;
+  background: #ffffff;
+  box-shadow: var(--shadow-md);
+}
+
+.bottom {
+  top: calc(100% + 8px);
+}
+
+.top {
+  bottom: calc(100% + 8px);
+}
+
+.options {
+  max-height: 248px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  scrollbar-color: #b9c4d4 transparent;
+  scrollbar-width: thin;
+}
+
+.options::-webkit-scrollbar {
+  width: 6px;
+}
+
+.options::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #b9c4d4;
+}
+
+.option {
+  width: 100%;
+  min-height: 36px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0 10px;
+  color: var(--text-color);
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: #ffffff;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease,
+    color 120ms ease;
+}
+
+.option:hover,
+.activeOption {
+  border-color: var(--accent-muted-color);
+  color: var(--accent-color);
+  background: var(--accent-soft-color);
 }
 
 .hint {
